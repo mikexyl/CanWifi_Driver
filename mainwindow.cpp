@@ -12,18 +12,31 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     qRegisterMetaType<vel_data_t>("vel_data_t");
+    qRegisterMetaType<uint32_t>("uint32_t");
+    qRegisterMetaType<battery_info_t>("battery_info_t");
+    qRegisterMetaType<navi_data_t>("navi_data_t");
+    qRegisterMetaType<encoder_data_t>("encoder_cnt_t");
 
     ui->setupUi(this);
-
-    CanConnector* sAGVControler=new CanConnector();
-    sAGVControler->start();
-
-    connect(this,SIGNAL(updateAlgoData(vel_data_t)),sAGVControler,SLOT(updateAlgoData(vel_data_t)));
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::registerControler(CanConnector *controller)
+{
+    connect(this,SIGNAL(updateAlgoData(vel_data_t)),controller->canTransmitThread,SLOT(updateAlgoData(vel_data_t)));
+    connect(controller->canReceiveThread,SIGNAL(showBattery(float)),this,SLOT(showBattery(float)));
+    connect(controller->canReceiveThread,SIGNAL(showTagCode(uint32_t)),this,SLOT(showTagCode(uint32_t)));
+    connect(controller->canReceiveThread,SIGNAL(showTagX(float)),this,SLOT(showTagX(float)));
+    connect(controller->canReceiveThread,SIGNAL(showTagY(float)),this,SLOT(showTagY(float)));
+    connect(controller->canReceiveThread,SIGNAL(showTagAngle(float)),this,SLOT(showTagAngle(float)));
+    connect(controller->canReceiveThread,SIGNAL(showEncoderL(int)),this,SLOT(showEncoderL(int)));
+    connect(controller->canReceiveThread,SIGNAL(showEncoderR(int)),this,SLOT(showEncoderR(int)));
+    connect(this,SIGNAL(queryEncoderCnt(void)),controller->canTransmitThread,SLOT(queryEncoderCnt(void)));
+
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
@@ -47,6 +60,11 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     case Qt::Key_D:
 
         break;
+    case Qt::Key_X:
+        vel_data_algo.vel_l=0;
+        vel_data_algo.vel_r=0;
+        emit updateAlgoData(vel_data_algo);
+        break;
     }
 }
 
@@ -59,17 +77,96 @@ void MainWindow::on_forwardButton_clicked()
 
 void MainWindow::on_leftwardButton_clicked()
 {
-
+    vel_data_algo.vel_l-=500;
+    vel_data_algo.vel_r+=500;
+    emit updateAlgoData(vel_data_algo);
 }
 
 
 void MainWindow::on_backwardButton_clicked()
 {
-
+    vel_data_algo.vel_l=-1000;
+    vel_data_algo.vel_r=-1000;
+    emit updateAlgoData(vel_data_algo);
 }
 
 
 void MainWindow::on_rightwardButton_clicked()
 {
+    vel_data_algo.vel_l+=500;
+    vel_data_algo.vel_r-=500;
+    emit updateAlgoData(vel_data_algo);
+}
 
+void MainWindow::showTagCode(uint32_t code)
+{
+    char text[50];
+    sprintf(text,"TagCode:%d",code);
+
+    ui->tagCodeEdit->setText(text);
+}
+
+void MainWindow::showTagX(float x)
+{
+    char text[50];
+    sprintf(text,"TagX:%f",x);
+
+    ui->tagXEdit->setText(text);
+}
+
+void MainWindow::showTagY(float y)
+{
+    char text[50];
+    sprintf(text,"TagY:%f",y);
+
+    ui->tagYEdit->setText(text);
+}
+
+void MainWindow::showTagAngle(float angle)
+{
+    char text[50];
+    sprintf(text,"TagAngle:%f",angle);
+
+    ui->tagAngleEdit->setText(text);
+}
+
+void MainWindow::showBattery(float battery)
+{
+    char text[50];
+    sprintf(text,"Battery:%f",battery);
+
+    ui->battreyEdit->setText(text);
+}
+
+void MainWindow::showEncoderL(int encoderL)
+{
+    char text[50];
+    sprintf(text,"encoderL:%d",encoderL);
+
+    ui->encoderLEdit->setText(text);
+}
+
+void MainWindow::showEncoderR(int encoderR)
+{
+    char text[50];
+    sprintf(text,"encoderR:%d",encoderR);
+
+    ui->encoderREdit->setText(text);
+}
+
+void MainWindow::on_tagCodeLabel_linkActivated(const QString &link)
+{
+
+}
+
+void MainWindow::on_stopButton_clicked()
+{
+    vel_data_algo.vel_l=0;
+    vel_data_algo.vel_r=0;
+    emit updateAlgoData(vel_data_algo);
+}
+
+void MainWindow::on_encoderButton_clicked()
+{
+    emit queryEncoderCnt();
 }

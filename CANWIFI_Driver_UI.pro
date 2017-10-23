@@ -26,12 +26,15 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
+    CustomAlgorithm.cpp \
     canconnector.cpp
 
 HEADERS += \
         mainwindow.h \
-    canconnector.h \
-    controlcan.h
+    controlcan.h \
+    vardef.h \
+    CustomAlgorithm.h \
+    canconnector.h
 
 FORMS += \
         mainwindow.ui
