@@ -386,13 +386,14 @@ void CanReceiveThread::run()
                         cout<<hex<<(unsigned short)msg.Data[i]<<ends;
                     }
                     cout<<endl;
-                    memcpy(&encoder_cnt.encoder_cnt_l,&msg.Data[0],2*sizeof(int));
-                    cout<<hex<<(int)encoder_cnt.encoder_cnt_l<<endl;
-                    cout<<encoder_cnt.encoder_cnt_l<<ends<<encoder_cnt.encoder_cnt_r<<endl;
-                    for(int i=0;i<8;i++){
-                        cout<<hex<<(unsigned short)msg.Data[i]<<ends;
-                    }
-                    cout<<endl;
+                    memcpy(&encoder_cnt.encoder_cnt_l,&msg.Data[0],8);
+                    memcpy(&encoder_cnt.encoder_cnt_r,&msg.Data[4],8);
+//                    cout<<hex<<(int)encoder_cnt.encoder_cnt_l<<endl;
+                    cout<<hex<<(int)encoder_cnt.encoder_cnt_l<<ends<<(int)encoder_cnt.encoder_cnt_r<<endl;
+//                    for(int i=0;i<8;i++){
+//                        cout<<hex<<(unsigned short)msg.Data[i]<<ends;
+//                    }
+//                    cout<<endl;
                     emit showEncoderL(encoder_cnt.encoder_cnt_l);
                     emit showEncoderR(encoder_cnt.encoder_cnt_r);
                     break;
@@ -400,5 +401,9 @@ void CanReceiveThread::run()
             }
 
         }
+
+        emit issueBatteryInfo(s_battery_info);
+        emit issueNaviData(navi_data);
+        emit issueEncoderCnt(encoder_cnt);
     }
 }

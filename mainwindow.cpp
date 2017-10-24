@@ -35,8 +35,6 @@ void MainWindow::registerControler(CanConnector *controller)
     connect(controller->canReceiveThread,SIGNAL(showTagAngle(float)),this,SLOT(showTagAngle(float)));
     connect(controller->canReceiveThread,SIGNAL(showEncoderL(int)),this,SLOT(showEncoderL(int)));
     connect(controller->canReceiveThread,SIGNAL(showEncoderR(int)),this,SLOT(showEncoderR(int)));
-    connect(this,SIGNAL(queryEncoderCnt(void)),controller->canTransmitThread,SLOT(queryEncoderCnt(void)));
-
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event)

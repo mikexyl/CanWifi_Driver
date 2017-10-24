@@ -33,12 +33,12 @@ void CustomAlgorithm::run()
     resetVelData();
     while(1)
     {
-        emit queryEncoderData();
+//        emit queryEncoderData();
         //////////user algo/////
 
-        msleep(500);
+        msleep(20);
         /////////user algo end////
-        emit updateAlgoData(vel_data);
+        //emit updateAlgoData(vel_data);
     }
 }
 
