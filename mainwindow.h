@@ -28,7 +28,8 @@ private:
 signals:
     bool updateAlgoData(vel_data_t new_vel_data_algo);
     bool queryEncoderCnt();
-
+    void startRecordLog(QString _logName);
+    void endRecordLog(void);
 private slots:
 
     void on_forwardButton_clicked();
@@ -48,6 +49,8 @@ private slots:
     void on_stopButton_clicked();
     void on_encoderButton_clicked();
 
+    void on_startRecordButton_clicked();
+    void on_endButton_clicked();
 };
 
 #endif // MAINWINDOW_H

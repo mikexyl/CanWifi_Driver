@@ -2,7 +2,10 @@
 #include <iostream>
 #include <windows.h>
 #include <QObject>
-
+#include <QDebug>
+#include <QDateTime>
+#include <QTime>
+#include "time.h"
 using namespace std;
 
 ////////Info///////
@@ -65,7 +68,7 @@ CanConnector::CanConnector()
     infoParams.canInd=0;
     infoParams.canwifiPort=4001;
     infoParams.reserved=0;
-    strcpy(infoParams.canwifiIp,"192.168.51.178");
+    strcpy(infoParams.canwifiIp,"192.168.1.178");
 
     canTransmitThread=new CanTransmitThread();
     canReceiveThread=new CanReceiveThread();
@@ -173,8 +176,8 @@ bool CanConnector::start()
 {
     initCanWifi();
     startCAN();
-   canTransmitThread->start();
-   canReceiveThread->start();
+    canTransmitThread->start();
+    canReceiveThread->start();
 }
 
 bool CanTransmitThread::sendCmd(int CMD_TYPE, vel_data_t *param)
@@ -244,6 +247,36 @@ bool CanConnector::initDllFunc()
     VCI_Receive=(LPVCI_Receive)GetProcAddress(m_hDLL,"VCI_Receive");
 }
 
+bool CanReceiveThread::writeLog(char *text)
+{
+    if(log!=NULL)
+        if(log->isOpen())
+        {
+            time_t curTimer=time(0);
+            char _time[64];
+            strftime( _time, sizeof(_time), "[%Y/%m/%d %X] ",localtime(&curTimer) );
+//            _time=curTimer->toString("[yyyy.MM.dd hh:mm:ss.zzz] ").toStdString().data();
+          log->write(_time);
+            log->write(text);
+        }
+}
+
+void CanReceiveThread::startRecordLog(QString _logName)
+{
+    if(log==NULL)
+        {
+            qDebug()<<(_logName+".log");
+            log=new QFile(_logName+".log");
+            log->open(QIODevice::WriteOnly);
+            qDebug()<<log->isOpen()<<"?";
+        }
+}
+
+void CanReceiveThread::endRecordLog(void)
+{
+    if(log!=NULL)            log->close();
+}
+
 CanTransmitThread::CanTransmitThread()
 {
 
@@ -267,7 +300,7 @@ void CanTransmitThread::run()
 
 CanReceiveThread::CanReceiveThread()
 {
-
+//   curTimer=new (time_t)time(0);
 }
 
 CanReceiveThread::~CanReceiveThread()
@@ -290,7 +323,7 @@ void CanReceiveThread::run()
         len=VCI_Receive(infoParams.deviceType,
                         infoParams.deviceInd,
                         infoParams.canInd,
-                        receiveData,1,10);
+                        receiveData,1,1);
         if(len<=0){
             VCI_ReadErrInfo(infoParams.deviceType,
                             infoParams.deviceInd,
@@ -328,7 +361,7 @@ void CanReceiveThread::run()
                 int32_t temp32=0;
                 uint16_t temp16=0;
                 uint16_t twoD_TAG=0;
-
+                char text[50];
                 switch(msg.ID)
                 {
                   //收到二维码的TxPDO1
@@ -338,6 +371,8 @@ void CanReceiveThread::run()
                       navi_data.y = temp32 * 0.1f;
                       //cout<<"y:"<<navi_data.y<<endl;
                       emit showTagY(navi_data.y);
+                      sprintf(text,"navi_data.y:%-7.4f\n",navi_data.y);
+                      writeLog(text);
                       break;
 
                   //收到二维码的TxPDO2
@@ -351,6 +386,10 @@ void CanReceiveThread::run()
                       //cout<<"angle:"<<navi_data.angle<<endl;
                       emit showTagX(navi_data.x);
                       emit showTagAngle(navi_data.angle);
+                      sprintf(text,"navi_data.x:%-7.4f\n",navi_data.x);
+                      writeLog(text);
+                      sprintf(text,"navi_data.angle:%-7.4f\n",navi_data.angle);
+                      writeLog(text);
                       break;
 
                   //收到二维码的TxPDO3
@@ -365,6 +404,8 @@ void CanReceiveThread::run()
                       }
                       //cout<<"tag:"<<navi_data.tag<<endl;
                       emit showTagCode(navi_data.tag);
+                      sprintf(text,"navi_data.tag:%d\n",navi_data.tag);
+                      writeLog(text);
                       break;
 
                   //case 0x488:

@@ -35,6 +35,8 @@ void MainWindow::registerControler(CanConnector *controller)
     connect(controller->canReceiveThread,SIGNAL(showTagAngle(float)),this,SLOT(showTagAngle(float)));
     connect(controller->canReceiveThread,SIGNAL(showEncoderL(int)),this,SLOT(showEncoderL(int)));
     connect(controller->canReceiveThread,SIGNAL(showEncoderR(int)),this,SLOT(showEncoderR(int)));
+    connect(this,SIGNAL(startRecordLog(QString)),controller->canReceiveThread,SLOT(startRecordLog(QString)));
+    connect(this,SIGNAL(endRecordLog()),controller->canReceiveThread,SLOT(endRecordLog()));
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
@@ -102,6 +104,7 @@ void MainWindow::showTagCode(uint32_t code)
     sprintf(text,"TagCode:%d",code);
 
     ui->tagCodeEdit->setText(text);
+    ui->tagCodeEdit->repaint();
 }
 
 void MainWindow::showTagX(float x)
@@ -110,6 +113,7 @@ void MainWindow::showTagX(float x)
     sprintf(text,"TagX:%f",x);
 
     ui->tagXEdit->setText(text);
+    ui->tagXEdit->repaint();
 }
 
 void MainWindow::showTagY(float y)
@@ -118,6 +122,7 @@ void MainWindow::showTagY(float y)
     sprintf(text,"TagY:%f",y);
 
     ui->tagYEdit->setText(text);
+    ui->tagYEdit->repaint();
 }
 
 void MainWindow::showTagAngle(float angle)
@@ -126,6 +131,7 @@ void MainWindow::showTagAngle(float angle)
     sprintf(text,"TagAngle:%f",angle);
 
     ui->tagAngleEdit->setText(text);
+    ui->tagAngleEdit->repaint();
 }
 
 void MainWindow::showBattery(float battery)
@@ -134,6 +140,7 @@ void MainWindow::showBattery(float battery)
     sprintf(text,"Battery:%f",battery);
 
     ui->battreyEdit->setText(text);
+    ui->battreyEdit->repaint();
 }
 
 void MainWindow::showEncoderL(int encoderL)
@@ -142,6 +149,7 @@ void MainWindow::showEncoderL(int encoderL)
     sprintf(text,"encoderL:%d",encoderL);
 
     ui->encoderLEdit->setText(text);
+    ui->encoderLEdit->repaint();
 }
 
 void MainWindow::showEncoderR(int encoderR)
@@ -150,6 +158,7 @@ void MainWindow::showEncoderR(int encoderR)
     sprintf(text,"encoderR:%d",encoderR);
 
     ui->encoderREdit->setText(text);
+    ui->encoderREdit->repaint();
 }
 
 void MainWindow::on_tagCodeLabel_linkActivated(const QString &link)
@@ -167,4 +176,15 @@ void MainWindow::on_stopButton_clicked()
 void MainWindow::on_encoderButton_clicked()
 {
     emit queryEncoderCnt();
+}
+
+void MainWindow::on_startRecordButton_clicked()
+{
+    emit startRecordLog(ui->xmlNameEdit->text());
+}
+
+
+void MainWindow::on_endButton_clicked()
+{
+    emit endRecordLog();
 }

@@ -5,6 +5,11 @@
 #include <QObject>
 #include "CustomAlgorithm.h"
 #include "vardef.h"
+#include <QFile>
+#include <QString>
+#include <QTime>
+#include <QDateTime>
+#include "time.h"
 
 #define VCI_CMD_SET_IP_REMOTE 0
 #define VCI_CMD_SET_PORT_REMOTE 1
@@ -47,7 +52,12 @@ public:
     battery_info_t s_battery_info;
     navi_data_t navi_data;
     encoder_data_t encoder_cnt;
-
+    QString logName="default";
+    QFile* log;
+    bool writeLog(char* text);
+public slots:
+    void startRecordLog(QString _logName);
+    void endRecordLog(void);
     void run();
 signals:
     void showTagCode(uint32_t code);
@@ -92,8 +102,8 @@ public:
     bool start(void);
 
 
-    CanTransmitThread* canTransmitThread;
 
+    CanTransmitThread* canTransmitThread;
 
     CanReceiveThread* canReceiveThread;
 
