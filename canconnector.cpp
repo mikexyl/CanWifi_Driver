@@ -25,6 +25,7 @@ struct InfoParam{
 #define PC_CANID 0x09
 
 #define ENCODER_CANID 0x110
+#define DLYTEST_CANID 0x120
 
 typedef DWORD (__stdcall*  LPVCI_OpenDevice)(DWORD,DWORD,DWORD);
 typedef DWORD (__stdcall*  LPVCI_CloseDevice)(DWORD,DWORD);
@@ -72,6 +73,8 @@ CanConnector::CanConnector()
 
     canTransmitThread=new CanTransmitThread();
     canReceiveThread=new CanReceiveThread();
+
+    connect(canReceiveThread,SIGNAL(sendCmd(int,vel_data_t*)),canTransmitThread,SLOT(sendCmd(int,vel_data_t*)));
 }
 
 CanConnector::~CanConnector()
@@ -247,34 +250,39 @@ bool CanConnector::initDllFunc()
     VCI_Receive=(LPVCI_Receive)GetProcAddress(m_hDLL,"VCI_Receive");
 }
 
-bool CanReceiveThread::writeLog(char *text)
+bool CanReceiveThread::writeLog(QFile* log,char *text)
 {
+//    cout<<(log==NULL)<<endl;
     if(log!=NULL)
         if(log->isOpen())
         {
-            time_t curTimer=time(0);
-            char _time[64];
-            strftime( _time, sizeof(_time), "[%Y/%m/%d %X] ",localtime(&curTimer) );
+//            time_t curTimer=time(0);
+//            char _time[64];
+//            strftime( _time, sizeof(_time), "[%Y/%m/%d %X] ",localtime(&curTimer) );
 //            _time=curTimer->toString("[yyyy.MM.dd hh:mm:ss.zzz] ").toStdString().data();
-          log->write(_time);
+          //log->write(_time);
             log->write(text);
         }
 }
 
 void CanReceiveThread::startRecordLog(QString _logName)
 {
-    if(log==NULL)
+    if(logX==NULL&&logY==NULL)
         {
             qDebug()<<(_logName+".log");
-            log=new QFile(_logName+".log");
-            log->open(QIODevice::WriteOnly);
-            qDebug()<<log->isOpen()<<"?";
+            logX=new QFile(_logName+"_X"+".log");
+            logY=new QFile(_logName+"_Y"+".log");
+            logX->open(QIODevice::WriteOnly);
+            logY->open(QIODevice::WriteOnly);
         }
 }
 
 void CanReceiveThread::endRecordLog(void)
 {
-    if(log!=NULL)            log->close();
+    if(logX!=NULL)
+        logX->close();
+    if(logY!=NULL)
+        logY->close();
 }
 
 CanTransmitThread::CanTransmitThread()
@@ -301,6 +309,8 @@ void CanTransmitThread::run()
 CanReceiveThread::CanReceiveThread()
 {
 //   curTimer=new (time_t)time(0);
+    logX=new QFile();
+    logY=new QFile();
 }
 
 CanReceiveThread::~CanReceiveThread()
@@ -314,12 +324,16 @@ void CanReceiveThread::run()
     VCI_ERR_INFO errInfo;
     int len,i;
     int n=0;
+    time_t t1,t2;
+    t2=time(0);
     while(1)
     {
 //        Sleep(1);
 //        cout<<"receiving"<<n++<<endl;
 
-
+//        t1=time(0);
+//        cout<<"timediff"<<difftime(t1,t2)<<endl;
+//        t1=time(0);
         len=VCI_Receive(infoParams.deviceType,
                         infoParams.deviceInd,
                         infoParams.canInd,
@@ -371,8 +385,8 @@ void CanReceiveThread::run()
                       navi_data.y = temp32 * 0.1f;
                       //cout<<"y:"<<navi_data.y<<endl;
                       emit showTagY(navi_data.y);
-                      sprintf(text,"navi_data.y:%-7.4f\n",navi_data.y);
-                      writeLog(text);
+                      sprintf(text,"%-7.4f\n",navi_data.y);
+                      writeLog(logY,text);
                       break;
 
                   //收到二维码的TxPDO2
@@ -386,10 +400,10 @@ void CanReceiveThread::run()
                       //cout<<"angle:"<<navi_data.angle<<endl;
                       emit showTagX(navi_data.x);
                       emit showTagAngle(navi_data.angle);
-                      sprintf(text,"navi_data.x:%-7.4f\n",navi_data.x);
-                      writeLog(text);
-                      sprintf(text,"navi_data.angle:%-7.4f\n",navi_data.angle);
-                      writeLog(text);
+                      sprintf(text,"%-7.4f ",navi_data.x);
+                      writeLog(logX,text);
+                      sprintf(text,"%-7.4f\n",navi_data.angle);
+                      writeLog(logX,text);
                       break;
 
                   //收到二维码的TxPDO3
@@ -405,7 +419,7 @@ void CanReceiveThread::run()
                       //cout<<"tag:"<<navi_data.tag<<endl;
                       emit showTagCode(navi_data.tag);
                       sprintf(text,"navi_data.tag:%d\n",navi_data.tag);
-                      writeLog(text);
+//                      writeLog(text);
                       break;
 
                   //case 0x488:
@@ -423,20 +437,29 @@ void CanReceiveThread::run()
                 switch(msg.ID)
                 {
                 case SAGV_CANID|ENCODER_CANID:
-                    for(int i=0;i<8;i++){
-                        cout<<hex<<(unsigned short)msg.Data[i]<<ends;
-                    }
-                    cout<<endl;
+//                    for(int i=0;i<8;i++){
+//                        cout<<hex<<(unsigned short)msg.Data[i]<<ends;
+//                    }
+//                    cout<<endl;
                     memcpy(&encoder_cnt.encoder_cnt_l,&msg.Data[0],8);
                     memcpy(&encoder_cnt.encoder_cnt_r,&msg.Data[4],8);
 //                    cout<<hex<<(int)encoder_cnt.encoder_cnt_l<<endl;
-                    cout<<hex<<(int)encoder_cnt.encoder_cnt_l<<ends<<(int)encoder_cnt.encoder_cnt_r<<endl;
+//                    cout<<hex<<(int)encoder_cnt.encoder_cnt_l<<ends<<(int)encoder_cnt.encoder_cnt_r<<endl;
 //                    for(int i=0;i<8;i++){
 //                        cout<<hex<<(unsigned short)msg.Data[i]<<ends;
 //                    }
 //                    cout<<endl;
                     emit showEncoderL(encoder_cnt.encoder_cnt_l);
                     emit showEncoderR(encoder_cnt.encoder_cnt_r);
+                    break;
+                case SAGV_CANID|DLYTEST_CANID:
+                    uint16_t timeStamp;
+                    memcpy(&timeStamp,&msg.Data[6],sizeof(uint16_t));
+                    qDebug()<<"timeStamp:"<<timeStamp;
+                    vel_data_t _tmp;
+                    emit sendCmd(DLYTEST_CANID,&_tmp);
+                    break;
+                default:
                     break;
                 }
             }

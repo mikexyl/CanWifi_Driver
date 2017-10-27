@@ -32,12 +32,12 @@ public:
 
     vel_data_t vel_data_algo;
 
-    bool sendCmd(int CMD_TYPE,vel_data_t* param);
     bool sendAlgoData();
     bool resetAlgoData();
     void run();
 
 public slots:
+    bool sendCmd(int CMD_TYPE,vel_data_t* param);
     bool updateAlgoData(vel_data_t new_vel_data_algo);
     bool queryEncoderData(void);
 };
@@ -53,13 +53,15 @@ public:
     navi_data_t navi_data;
     encoder_data_t encoder_cnt;
     QString logName="default";
-    QFile* log;
-    bool writeLog(char* text);
+    QFile* logX;
+    QFile* logY;
+    bool writeLog(QFile *log, char* text);
 public slots:
     void startRecordLog(QString _logName);
     void endRecordLog(void);
     void run();
 signals:
+    bool sendCmd(int CMD_TYPE,vel_data_t* param);
     void showTagCode(uint32_t code);
     void showTagX(float x);
     void showTagY(float y);
