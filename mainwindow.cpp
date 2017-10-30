@@ -111,9 +111,12 @@ void MainWindow::showTagX(float x)
 {
     char text[50];
     sprintf(text,"TagX:%f",x);
+    ui->testLCD->setDigitCount(fabs(x));
+    ui->testLCD->repaint();
+    cout<<"x:"<<x<<endl;
 
-    ui->tagXEdit->setText(text);
-    ui->tagXEdit->repaint();
+//    ui->testLabel->setText(text);
+//    ui->testLabel->repaint();
 }
 
 void MainWindow::showTagY(float y)

@@ -38,3 +38,10 @@ HEADERS += \
 
 FORMS += \
         mainwindow.ui
+
+
+INCLUDEPATH += C:/lxy/opencv310/opencv/Release/install/include \
+               C:/lxy/opencv310/opencv/Release/install/include/opencv \
+              C:/lxy/opencv310/opencv/Release/install/include/opencv2
+
+LIBS += C:/lxy/opencv310/opencv/Release/install/x86/mingw/lib/libopencv_*

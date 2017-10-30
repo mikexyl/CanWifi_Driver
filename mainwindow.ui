@@ -32,15 +32,22 @@
        <item row="1" column="0">
         <widget class="QLineEdit" name="tagXEdit"/>
        </item>
-       <item row="3" column="0">
-        <widget class="QLineEdit" name="tagAngleEdit"/>
-       </item>
        <item row="0" column="0">
         <widget class="QLineEdit" name="tagCodeEdit">
          <property name="font">
           <font>
            <stylestrategy>PreferDefault</stylestrategy>
           </font>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLineEdit" name="tagAngleEdit"/>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="testLabel">
+         <property name="text">
+          <string>TextLabel</string>
          </property>
         </widget>
        </item>
@@ -62,6 +69,24 @@
         <widget class="QPushButton" name="endButton">
          <property name="text">
           <string>end</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLCDNumber" name="testLCD">
+         <property name="font">
+          <font>
+           <pointsize>13</pointsize>
+          </font>
+         </property>
+         <property name="smallDecimalPoint">
+          <bool>true</bool>
+         </property>
+         <property name="digitCount">
+          <number>5</number>
+         </property>
+         <property name="value" stdset="0">
+          <double>0.100000000000000</double>
          </property>
         </widget>
        </item>

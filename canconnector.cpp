@@ -6,6 +6,9 @@
 #include <QDateTime>
 #include <QTime>
 #include "time.h"
+#include <opencv.hpp>
+using namespace cv;
+
 using namespace std;
 
 ////////Info///////
@@ -253,21 +256,20 @@ bool CanConnector::initDllFunc()
 bool CanReceiveThread::writeLog(QFile* log,char *text)
 {
 //    cout<<(log==NULL)<<endl;
-    if(log!=NULL)
         if(log->isOpen())
         {
-//            time_t curTimer=time(0);
-//            char _time[64];
-//            strftime( _time, sizeof(_time), "[%Y/%m/%d %X] ",localtime(&curTimer) );
-//            _time=curTimer->toString("[yyyy.MM.dd hh:mm:ss.zzz] ").toStdString().data();
-          //log->write(_time);
+            time_t curTimer=time(0);
+            char _time[64];
+            strftime( _time, sizeof(_time), "[%Y/%m/%d %X] ",localtime(&curTimer) );
+            //_time=curTimer->toString("[yyyy.MM.dd hh:mm:ss.zzz] ").toStdString().data();
+          log->write(_time);
             log->write(text);
         }
 }
 
 void CanReceiveThread::startRecordLog(QString _logName)
 {
-    if(logX==NULL&&logY==NULL)
+    if(!logX->isOpen()&&!logY->isOpen())
         {
             qDebug()<<(_logName+".log");
             logX=new QFile(_logName+"_X"+".log");
@@ -324,16 +326,16 @@ void CanReceiveThread::run()
     VCI_ERR_INFO errInfo;
     int len,i;
     int n=0;
-    time_t t1,t2;
-    t2=time(0);
+    double t1,t2;
+//    t2=time(0);
+    time_t curTimer;
+    char _time[64];
     while(1)
     {
 //        Sleep(1);
 //        cout<<"receiving"<<n++<<endl;
 
-//        t1=time(0);
-//        cout<<"timediff"<<difftime(t1,t2)<<endl;
-//        t1=time(0);
+
         len=VCI_Receive(infoParams.deviceType,
                         infoParams.deviceInd,
                         infoParams.canInd,
@@ -366,7 +368,7 @@ void CanReceiveThread::run()
                     s_battery_info.temperature= msg.Data[5]-40;
                     s_battery_info.state = msg.Data[6];
 
-                    emit showBattery(s_battery_info.power);
+                    //emit showBattery(s_battery_info.power);
                 }
 
 
@@ -384,7 +386,7 @@ void CanReceiveThread::run()
                       _reverse_copy(&msg.Data[0], &temp32, 4);
                       navi_data.y = temp32 * 0.1f;
                       //cout<<"y:"<<navi_data.y<<endl;
-                      emit showTagY(navi_data.y);
+                      //emit showTagY(navi_data.y);
                       sprintf(text,"%-7.4f\n",navi_data.y);
                       writeLog(logY,text);
                       break;
@@ -396,10 +398,19 @@ void CanReceiveThread::run()
                       _reverse_copy(&msg.Data[4], &temp16, 2);
                       navi_data.x = temp32*0.1f;
                       navi_data.angle = temp16*0.1f;
-                      //cout<<"x:"<<navi_data.x<<endl;
+
+                      t2=t1;
+                      t1=static_cast<double>(getTickCount());
+
+                      //cout<<"timediff"<<(t1-t2)/getTickFrequency()<<endl;
+
+                      curTimer=time(0);
+                      strftime( _time, sizeof(_time), "[%Y/%m/%d %X] ",localtime(&curTimer) );
+
+                      cout<<_time<<ends<<"x:"<<navi_data.x<<endl;
                       //cout<<"angle:"<<navi_data.angle<<endl;
-                      emit showTagX(navi_data.x);
-                      emit showTagAngle(navi_data.angle);
+                      //emit showTagX(navi_data.x);
+                      //emit showTagAngle(navi_data.angle);
                       sprintf(text,"%-7.4f ",navi_data.x);
                       writeLog(logX,text);
                       sprintf(text,"%-7.4f\n",navi_data.angle);
@@ -417,7 +428,7 @@ void CanReceiveThread::run()
                           _reverse_copy(&msg.Data[4], &navi_data.tag, 4);
                       }
                       //cout<<"tag:"<<navi_data.tag<<endl;
-                      emit showTagCode(navi_data.tag);
+                      //emit showTagCode(navi_data.tag);
                       sprintf(text,"navi_data.tag:%d\n",navi_data.tag);
 //                      writeLog(text);
                       break;
@@ -449,13 +460,13 @@ void CanReceiveThread::run()
 //                        cout<<hex<<(unsigned short)msg.Data[i]<<ends;
 //                    }
 //                    cout<<endl;
-                    emit showEncoderL(encoder_cnt.encoder_cnt_l);
-                    emit showEncoderR(encoder_cnt.encoder_cnt_r);
+                    //emit showEncoderL(encoder_cnt.encoder_cnt_l);
+                    //emit showEncoderR(encoder_cnt.encoder_cnt_r);
                     break;
                 case SAGV_CANID|DLYTEST_CANID:
                     uint16_t timeStamp;
                     memcpy(&timeStamp,&msg.Data[6],sizeof(uint16_t));
-                    qDebug()<<"timeStamp:"<<timeStamp;
+//                    qDebug()<<"timeStamp:"<<timeStamp;
                     vel_data_t _tmp;
                     emit sendCmd(DLYTEST_CANID,&_tmp);
                     break;
