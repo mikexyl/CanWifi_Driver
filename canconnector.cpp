@@ -67,7 +67,8 @@ LPVCI_Receive VCI_Receive;
 
 CanConnector::CanConnector()
 {
-    infoParams.deviceType=VCI_WIFICAN_TCP;
+//    infoParams.deviceType=VCI_WIFICAN_TCP;
+    infoParams.deviceType=VCI_USBCAN2;
     infoParams.deviceInd=0;
     infoParams.canInd=0;
     infoParams.canwifiPort=4001;
@@ -134,29 +135,50 @@ bool CanConnector::initCanWifi()
     initDllFunc();
 
     DWORD dwRel;
+    cout<<infoParams.deviceType<<ends<<infoParams.deviceInd<<ends<<infoParams.reserved<<endl;
     if(VCI_OpenDevice!=NULL){
         dwRel = VCI_OpenDevice(infoParams.deviceType, infoParams.deviceInd, infoParams.reserved);
+        if(dwRel==STATUS_OK)
+            cout<<"open ok"<<endl;
+        else cout<<"open not ok"<<endl;
     }
     else cout<<"cannot load VCI_OpenDevice"<<endl;
 
-    if(VCI_SetReference!=NULL){
-        dwRel=VCI_SetReference(infoParams.deviceType,
-                               infoParams.deviceInd,
-                               infoParams.canInd,
-                               VCI_CMD_SET_IP_REMOTE,(void*)infoParams.canwifiIp);
+    if(infoParams.deviceType==VCI_USBCAN2)
+    {
+        VCI_INIT_CONFIG initConfig;
+        initConfig.AccCode=0x80000008;
+        initConfig.AccMask=0xFFFFFFFF;
+        initConfig.Filter=1;
+        initConfig.Timing0=0x00;
+        initConfig.Timing1=0x1C;
+        initConfig.Mode=0;
+        dwRel = VCI_InitCAN(infoParams.deviceType, infoParams.deviceInd, infoParams.canInd, &initConfig);
+        cout<<dwRel<<endl;
         if(dwRel==STATUS_OK)
-            cout<<"set ip ok"<<endl;
-        else cout<<"set ip not ok"<<endl;
-
-        dwRel=VCI_SetReference(infoParams.deviceType,
-                               infoParams.deviceInd,
-                               infoParams.canInd,
-                               VCI_CMD_SET_PORT_REMOTE,(void*)&infoParams.canwifiPort);
-        if(dwRel==STATUS_OK)
-            cout<<"set port ok"<<endl;
-        else cout<<"set port not ok"<<endl;
+            cout<<"init ok"<<endl;
+        else cout<<"init not ok"<<endl;
     }
-    else cout<<"cannot load VCI_SetReference"<<endl;
+    else{
+        if(VCI_SetReference!=NULL){
+            dwRel=VCI_SetReference(infoParams.deviceType,
+                                   infoParams.deviceInd,
+                                   infoParams.canInd,
+                                   VCI_CMD_SET_IP_REMOTE,(void*)infoParams.canwifiIp);
+            if(dwRel==STATUS_OK)
+                cout<<"set ip ok"<<endl;
+            else cout<<"set ip not ok"<<endl;
+
+            dwRel=VCI_SetReference(infoParams.deviceType,
+                                   infoParams.deviceInd,
+                                   infoParams.canInd,
+                                   VCI_CMD_SET_PORT_REMOTE,(void*)&infoParams.canwifiPort);
+            if(dwRel==STATUS_OK)
+                cout<<"set port ok"<<endl;
+            else cout<<"set port not ok"<<endl;
+        }
+        else cout<<"cannot load VCI_SetReference"<<endl;
+    }
 }
 
 bool CanConnector::startCAN()
@@ -188,6 +210,7 @@ bool CanConnector::start()
 
 bool CanTransmitThread::sendCmd(int CMD_TYPE, vel_data_t *param)
 {
+    cout<<"ffffffffffffffffffff"<<endl;
     VCI_CAN_OBJ transmitData;
 
     transmitData.ID=PC_CANID|CMD_TYPE;
@@ -201,6 +224,11 @@ bool CanTransmitThread::sendCmd(int CMD_TYPE, vel_data_t *param)
                              infoParams.deviceInd,
                              infoParams.canInd,
                              &transmitData,1);
+    for(int i=0;i<8;i++)
+    {
+        cout<<hex<<(uint32_t)transmitData.Data[i]<<ends;
+    }
+    cout<<endl;
 
     return (bool)dwRel;
 }
@@ -303,7 +331,7 @@ void CanTransmitThread::run()
     {
 //        vel_data_algo=new_vel_data_algo;
 //        cout<<"vel_algo:"<<vel_data_algo.vel_l<<","<<vel_data_algo.vel_r<<endl;
-        sendAlgoData();
+//        sendAlgoData();
         msleep(20);
     }
 }
@@ -350,6 +378,11 @@ void CanReceiveThread::run()
 //            Sleep(1);
             for(i=0;i<len;i++){
                 VCI_CAN_OBJ msg=receiveData[i];
+                for(int j=0;j<8;j++)
+                {
+                    cout<<hex<<(uint32_t)msg.Data[j]<<ends;
+                }
+                cout<<endl;
                 if( msg.ExternFlag!=0
                         ||msg.RemoteFlag!=0)
                     break;
@@ -466,8 +499,9 @@ void CanReceiveThread::run()
                 case SAGV_CANID|DLYTEST_CANID:
                     uint16_t timeStamp;
                     memcpy(&timeStamp,&msg.Data[6],sizeof(uint16_t));
-//                    qDebug()<<"timeStamp:"<<timeStamp;
+                    qDebug()<<"timeStamp:"<<timeStamp;
                     vel_data_t _tmp;
+                    cout<<"lllllllllllllllllll"<<endl;
                     emit sendCmd(DLYTEST_CANID,&_tmp);
                     break;
                 default:
